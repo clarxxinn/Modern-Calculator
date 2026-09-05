@@ -6,21 +6,12 @@ import androidx.compose.runtime.setValue
 import java.math.BigInteger
 import java.text.DecimalFormat
 
-/**
- * Holds the current calculator state and the pure logic for
- * building / editing / evaluating an arithmetic expression.
- *
- * The raw expression is stored WITHOUT thousands separators
- * (e.g. "4840+120/30"). Formatting for display happens separately
- * so the underlying math is never affected by commas.
- */
 class CalculatorState {
     var expression: String by mutableStateOf("")
         private set
     var result: String by mutableStateOf("")
         private set
 
-    // True right after "=" was pressed. The next digit starts a new expression.
     private var justEvaluated: Boolean = false
 
     private val operators = charArrayOf('+', '-', '*', '/')
@@ -31,7 +22,6 @@ class CalculatorState {
             result = ""
             justEvaluated = false
         } else {
-            // Avoid a string of leading zeros like "007"
             val lastNumber = currentNumberToken()
             if (lastNumber == "0") {
                 expression = expression.dropLast(1) + digit
@@ -58,7 +48,6 @@ class CalculatorState {
 
     fun onOperator(op: Char) {
         if (expression.isEmpty()) {
-            // Allow starting with a leading minus (negative number)
             if (op == '-') {
                 expression = "-"
                 justEvaluated = false
@@ -66,7 +55,6 @@ class CalculatorState {
             return
         }
         if (justEvaluated) {
-            // Continue calculating from the previous result
             expression = (if (result.isNotEmpty()) result.replace(",", "") else expression) + op
             result = ""
             justEvaluated = false
@@ -80,7 +68,6 @@ class CalculatorState {
     }
 
     fun onToggleSign() {
-        // Negate the last (possibly still-being-typed) number in the expression.
         val start = lastNumberStartIndex()
         if (start == -1) return
         val end = expression.length
@@ -90,7 +77,6 @@ class CalculatorState {
         val negated = if (start > 0 && expression[start - 1] == '-' &&
             (start - 1 == 0 || expression[start - 2] in operators)
         ) {
-            // token already negative -> remove the leading '-'
             expression = expression.substring(0, start - 1) + expression.substring(start)
             return
         } else {
@@ -160,7 +146,6 @@ class CalculatorState {
         return if (value == value.toLong().toDouble()) {
             value.toLong().toString()
         } else {
-            // Keep reasonable precision, then strip trailing zeros
             var s = String.format("%.10f", value)
             s = s.trimEnd('0').trimEnd('.')
             s
@@ -168,7 +153,6 @@ class CalculatorState {
     }
 
     companion object {
-        /** Formats the currently-being-typed expression with thousands separators for display. */
         fun formatDisplayExpression(expr: String): String {
             if (expr.isEmpty()) return ""
             val sb = StringBuilder()
@@ -187,7 +171,6 @@ class CalculatorState {
                 if (c.isDigit() || c == '.') {
                     numBuffer.append(c)
                 } else if (c == '-' && (i == 0 || expr[i - 1] in charArrayOf('+', '-', '*', '/'))) {
-                    // unary minus belongs to the number
                     flush()
                     numBuffer.append(c)
                 } else {
@@ -223,11 +206,6 @@ class CalculatorState {
     }
 }
 
-/**
- * Minimal recursive-descent parser supporting + - * / with standard
- * precedence, decimals, and unary minus. No parentheses (not needed
- * by this keypad, but easy to extend later).
- */
 private class ExpressionParser(private val text: String) {
     private var pos = 0
 
