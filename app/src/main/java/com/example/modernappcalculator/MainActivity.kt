@@ -60,7 +60,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Hides or shows the status bar + navigation bar for a true fullscreen (immersive) mode. */
 private fun setFullscreen(window: Window, enable: Boolean) {
     val insetsController = WindowCompat.getInsetsController(window, window.decorView)
     if (enable) {
